@@ -1,0 +1,83 @@
+package api
+
+import (
+	"context"
+	"net/http"
+	"time"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/jmontesinos91/collector/internal/services/collector"
+	scollector "github.com/jmontesinos91/collector/internal/services/collector"
+	"github.com/jmontesinos91/ologs/logger"
+	"github.com/jmontesinos91/osecurity/sts"
+	"github.com/sirupsen/logrus"
+)
+
+// CollectorController controller struct
+type CollectorController struct {
+	log         *logger.ContextLogger
+	validate    *validator.Validate
+	collectorSv collector.IService
+	stsClient   sts.ISTSClient
+}
+
+// NewCollectorController Constructor
+func NewCollectorController(server *HTTPServer, validator *validator.Validate, ss collector.IService, sts sts.ISTSClient) *CollectorController {
+	sc := &CollectorController{
+		log:         server.Logger,
+		validate:    validator,
+		collectorSv: ss,
+		stsClient:   sts,
+	}
+
+	// Endpoints without secure
+	// Deprecated: We will remove this endpoint for new usages
+	server.Router.Get("/v2/routers/", sc.handleCollector)
+
+	return sc
+}
+
+func (sc *CollectorController) handleReceive(w http.ResponseWriter, r *http.Request) {
+	sc.log.Log(logrus.InfoLevel, "handleReceive", "Incoming request to handleReceive")
+
+	// Create a context with a deadline of 2 seconds.
+	ctx, cancel := context.WithTimeout(r.Context(), 90*time.Second)
+	defer cancel()
+
+	payload := &scollector.Payload{}
+	err := payload.ParsePayload(r)
+	if err != nil {
+		RenderError(r.Context(), w, err)
+		return
+	}
+
+	err = sc.collectorSv.Collector(ctx, payload)
+	if err != nil {
+		RenderError(r.Context(), w, err)
+		return
+	}
+
+	RenderJSON(r.Context(), w, http.StatusOK, nil)
+}
+
+func (sc *CollectorController) handleCollector(w http.ResponseWriter, r *http.Request) {
+	sc.log.Log(logrus.InfoLevel, "handleCollector", "Incoming request to handleCollector")
+
+	// Create a context with a deadline of 2 seconds.
+	ctx, cancel := context.WithTimeout(r.Context(), 90*time.Second)
+	defer cancel()
+
+	payload := &scollector.Payload{}
+	err := payload.ParsePayload(r)
+	if err != nil {
+		RenderError(r.Context(), w, err)
+		return
+	}
+
+	err = sc.collectorSv.Collector(ctx, payload)
+	if err != nil {
+		RenderError(r.Context(), w, err)
+	}
+
+	RenderJSON(r.Context(), w, http.StatusOK, nil)
+}

@@ -1,0 +1,40 @@
+version: '3.8'
+name: collector2-local
+services:
+  db:
+    container_name: ${SERVICE_NAME}
+    image: postgres:15.2
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - ./postgress:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_DATABASE}
+
+  pgAdmin:
+    depends_on:
+      - db
+    image: dpage/pgadmin4:6.17
+    ports:
+      - "8090:80"
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_USER=admin
+      - PGADMIN_DEFAULT_PASSWORD=omniview123
+
+  go-ms-collector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GITLAB_TOKEN: ${GITLAB_TOKEN}
+        DATABASE_DSN: ${DATABASE_DSN}
+        OLD_DATABASE_DSN: ${OLD_DATABASE_DSN}
+        DB_PASSWORD: ${DB_PASSWORD}
+
+volumes:
+  postgres_db:
