@@ -265,3 +265,128 @@ func TestDeleteTrafficByID(t *testing.T) {
 	}
 
 }
+
+func TestResetCounter(t *testing.T) {
+	ctxBack := context.Background()
+	ctxBack = context.WithValue(ctxBack, middleware.RequestIDKey, "unit-test-request-id")
+	ctxBack = context.WithValue(ctxBack, &sts.Claim, sts.Claims{
+		UserID: 0,
+		Role:   "unit-test-role",
+	})
+	log := logger.NewContextLogger("Retrieve", "debug", logger.TextFormat)
+
+	type repositoryOpts struct { //nolint:wsl
+		trafficRepo     *trafficmocks.IRepository
+		trafficRepoFunc func() *trafficmocks.IRepository
+	}
+
+	type args struct { //nolint:wsl
+		ctx       context.Context
+		trafficID string
+	}
+
+	type assertsParams struct { //nolint:wsl
+		args
+		repositoryOpts
+		result error
+	}
+
+	cases := []struct { //nolint:wsl
+		name           string
+		repositoryOpts repositoryOpts
+		args           args
+		err            bool
+		asserts        func(*testing.T, error, assertsParams) bool
+	}{
+		{
+			name: "Happy path",
+			repositoryOpts: repositoryOpts{
+				trafficRepoFunc: func() *trafficmocks.IRepository {
+					repositoryMock := &trafficmocks.IRepository{}
+					repositoryMock.On("ResetCounter", mock.Anything, mock.Anything).
+						Return(nil)
+					return repositoryMock
+				},
+			},
+			args: args{
+				trafficID: "unit-test-traffic-id",
+			},
+			err: false,
+			asserts: func(t *testing.T, err error, ap assertsParams) bool {
+				return assert.Nil(t, ap.result) &&
+					assert.NoError(t, err) &&
+					ap.trafficRepo.AssertExpectations(t)
+			},
+		},
+		{
+			name: "Empty filters",
+			repositoryOpts: repositoryOpts{
+				trafficRepoFunc: func() *trafficmocks.IRepository {
+					repositoryMock := &trafficmocks.IRepository{}
+					repositoryMock.On("ResetCounter", mock.Anything, mock.Anything).
+						Return([]otraffic.Model{}, 1, 10, nil)
+					return repositoryMock
+				},
+			},
+			args: args{
+				trafficID: "",
+			},
+			err: true,
+			asserts: func(t *testing.T, err error, ap assertsParams) bool {
+				var terr *terrors.Error
+				return assert.ErrorAs(t, err, &terr) &&
+					assert.Equal(t, "Invalid trafficID", terr.Message)
+			},
+		},
+		{
+			name: "Error on retrieve",
+			repositoryOpts: repositoryOpts{
+				trafficRepoFunc: func() *trafficmocks.IRepository {
+					repositoryMock := &trafficmocks.IRepository{}
+					repositoryMock.On("ResetCounter", mock.Anything, mock.Anything).
+						Return(terrors.InternalService("reset_counter", "Failed reset counter traffic from the database", map[string]string{}))
+
+					return repositoryMock
+				},
+			},
+			args: args{
+				trafficID: "unit-test-traffic-id",
+			},
+			err: true,
+			asserts: func(t *testing.T, err error, ap assertsParams) bool {
+				var terr *terrors.Error
+				return assert.ErrorAs(t, err, &terr) &&
+					assert.Equal(t, "Failed reset counter traffic from the database", terr.Message)
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.args.ctx == nil {
+				tc.args.ctx = ctxBack
+			}
+
+			if tc.repositoryOpts.trafficRepoFunc != nil {
+				tc.repositoryOpts.trafficRepo = tc.repositoryOpts.trafficRepoFunc()
+			}
+
+			trafficSvc := traffic.NewDefaultService(log, tc.repositoryOpts.trafficRepo)
+
+			err := trafficSvc.HandleResetCounter(tc.args.ctx, tc.args.trafficID)
+			if (err != nil) != tc.err {
+				t.Errorf("DefaultService.HandleResetCounter() error = %v, wantErr %v", err, tc.err)
+			}
+
+			assertsParams := assertsParams{
+				repositoryOpts: tc.repositoryOpts,
+				args:           tc.args,
+			}
+
+			if !tc.asserts(t, err, assertsParams) {
+				t.Errorf("Assert error on test = '%v'", tc.name)
+			}
+
+		})
+	}
+}

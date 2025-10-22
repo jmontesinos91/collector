@@ -130,6 +130,20 @@ func (r *DatabaseRepository) DeleteByID(ctx context.Context, trafficID string) e
 	return nil
 }
 
+// ResetCounter Handles update the register by IMEI
+func (r *DatabaseRepository) ResetCounter(ctx context.Context, trafficID string) error {
+	_, errUpdate := r.db.NewUpdate().
+		Table("traffic").
+		Set("counter = 0").
+		Set("updated_at = ?", time.Now().UTC()).
+		Where("id = ?", trafficID).
+		Exec(ctx)
+	if errUpdate != nil {
+		return terrors.InternalService("reset_counter", "Failed reset counter traffic from the database", map[string]string{})
+	}
+	return nil
+}
+
 func (r *DatabaseRepository) RetrieveData(ctx context.Context, filter *Metadata) ([]Model, error) {
 	var traffics []Model
 
