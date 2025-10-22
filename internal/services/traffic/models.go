@@ -1,6 +1,7 @@
 package traffic
 
 import (
+	"github.com/jmontesinos91/collector/domains/pagination"
 	"time"
 )
 
@@ -22,14 +23,15 @@ type Alarm struct {
 
 // FilterRequest holds the http request params
 type FilterRequest struct {
-	QParam  string `json:"q,omitempty"`
-	ID      string `json:"id,omitempty"`
-	Request string `json:"request,omitempty"`
-	IMEI    string `json:"imei,omitempty"`
-	Ip      string `json:"ip,omitempty"`
-	IsAlarm *bool  `json:"alarm,omitempty"`
-	Counter *int   `json:"counter,omitempty"`
-	Action  string `json:"action,omitempty"`
+	QParam  string            `json:"q,omitempty"`
+	ID      string            `json:"id,omitempty"`
+	Request string            `json:"request,omitempty"`
+	IMEI    string            `json:"imei,omitempty"`
+	Ip      string            `json:"ip,omitempty"`
+	IsAlarm *bool             `json:"alarm,omitempty"`
+	Counter *int              `json:"counter,omitempty"`
+	Action  string            `json:"action,omitempty"`
+	Filter  pagination.Filter `json:"filter,omitempty"`
 }
 
 // Traffic item

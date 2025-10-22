@@ -1,6 +1,7 @@
 package traffic
 
 import (
+	"github.com/jmontesinos91/collector/domains/pagination"
 	"net/http"
 	"net/url"
 	"testing"
@@ -26,6 +27,21 @@ func TestToResponse(t *testing.T) {
 	assert.Equal(t, data, response.Data, "Expected data to match")
 }
 
+func TestToPaginatedResponse(t *testing.T) {
+
+	data := []string{"item1", "item2", "item3"}
+	currentPage := 1
+	pages := 10
+	total := 30
+
+	response := ToPaginatedResponse(data, currentPage, pages, total)
+
+	assert.Equal(t, data, response.Data, "Expected data to match")
+	assert.Equal(t, currentPage, response.CurrentPage, "Expected currentPage to be 1")
+	assert.Equal(t, pages, response.Pages, "Expected pages to be 10")
+	assert.Equal(t, total, response.Total, "Expected total to be 30")
+}
+
 func TestParseFilterRequest(t *testing.T) {
 	isAlarmTrue := true
 	counter := 1
@@ -39,18 +55,22 @@ func TestParseFilterRequest(t *testing.T) {
 		{
 			name: "Happy path valid parameters",
 			queryParams: map[string]string{
-				"q":        "test-query",
-				"id":       "12345",
-				"request":  "test-request",
-				"imei":     "test-imei",
-				"ip":       "192.168.0.1",
-				"alarm":    "1",
-				"counter":  "1",
-				"sortBy":   "ip",
-				"sortDesc": "true",
-				"size":     "20",
-				"page":     "2",
-				"action":   "list",
+				"q":            "test-query",
+				"id":           "12345",
+				"request":      "test-request",
+				"imei":         "test-imei",
+				"ip":           "192.168.0.1",
+				"alarm":        "1",
+				"counter":      "1",
+				"createdAtMin": "2024-09-16T15:04",
+				"createdAtMax": "2024-09-17T15:04",
+				"updatedAtMin": "2024-09-18T15:04",
+				"updatedAtMax": "2024-09-19T15:04",
+				"sortBy":       "ip",
+				"sortDesc":     "true",
+				"size":         "20",
+				"page":         "2",
+				"action":       "list",
 			},
 			expected: &FilterRequest{
 				QParam:  "test-query",
@@ -61,8 +81,32 @@ func TestParseFilterRequest(t *testing.T) {
 				Counter: &counter,
 				IsAlarm: &isAlarmTrue,
 				Action:  "list",
+				Filter: pagination.Filter{
+					SortBy:   "ip",
+					SortDesc: true,
+					Size:     20,
+					Page:     2,
+				},
 			},
 			expectError: false,
+		},
+		{
+			name: "Invalid size parameter",
+			queryParams: map[string]string{
+				"size": "invalid-size",
+			},
+			expected:    nil,
+			expectError: true,
+			errorMsg:    "Invalid size parameter",
+		},
+		{
+			name: "Invalid sortDesc parameter",
+			queryParams: map[string]string{
+				"sortDesc": "invalid-boolean",
+			},
+			expected:    nil,
+			expectError: true,
+			errorMsg:    "Invalid sortDesc parameter",
 		},
 		{
 			name: "Invalid counter parameter",
