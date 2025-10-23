@@ -14,4 +14,5 @@ type IRepository interface {
 	Retrieve(ctx context.Context, filter *Metadata) ([]Model, int, int, error)
 	DeleteByID(ctx context.Context, trafficID string) error
 	RetrieveData(ctx context.Context, filter *Metadata) ([]Model, error)
+	ResetCounter(ctx context.Context, trafficID string) error
 }

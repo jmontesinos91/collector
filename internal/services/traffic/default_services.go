@@ -69,3 +69,27 @@ func (s *DefaultService) HandleDelete(ctx context.Context, trafficID string) err
 
 	return nil
 }
+
+func (s *DefaultService) HandleResetCounter(ctx context.Context, trafficID string) error {
+	requestID := ctx.Value(middleware.RequestIDKey).(string)
+	claims := ctx.Value(&sts.Claim).(sts.Claims)
+	if trafficID == "" {
+		return terrors.New(terrors.ErrBadRequest, "Invalid trafficID", map[string]string{})
+	}
+
+	err := s.trafficRepo.ResetCounter(ctx, trafficID)
+	if err != nil {
+		s.log.WithContext(logrus.ErrorLevel,
+			"HandleResetCounter",
+			"Failed to reset traffic counter",
+			logger.Context{
+				tracekey.TrackingID: requestID,
+				tracekey.UserID:     claims.UserID,
+				tracekey.Role:       claims.Role,
+			},
+			err)
+		return err
+	}
+
+	return nil
+}

@@ -186,6 +186,20 @@ func (_m *IRepository) UpdateIsNotified(ctx context.Context, trafficID string) e
 	return r0
 }
 
+// ResetCounter provides a mock function with given fields: ctx, trafficID
+func (_m *IRepository) ResetCounter(ctx context.Context, trafficID string) error {
+	ret := _m.Called(ctx, trafficID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, trafficID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 type mockConstructorTestingTNewIRepository interface {
 	mock.TestingT
 	Cleanup(func())
