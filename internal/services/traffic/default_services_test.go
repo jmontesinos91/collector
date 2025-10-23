@@ -3,6 +3,7 @@ package traffic_test
 import (
 	"context"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jmontesinos91/collector/domains/pagination"
 	otraffic "github.com/jmontesinos91/collector/internal/repositories/traffic"
 	"github.com/jmontesinos91/collector/internal/repositories/traffic/trafficmocks"
 	"github.com/jmontesinos91/collector/internal/services/traffic"
@@ -32,13 +33,13 @@ func TestRetrieve(t *testing.T) {
 	type args struct { //nolint:wsl
 		ctx      context.Context
 		filter   *straffic.FilterRequest
-		expected []straffic.Traffic
+		expected pagination.PaginatedRes
 	}
 
 	type assertsParams struct { //nolint:wsl
 		args
 		repositoryOpts
-		result []straffic.Traffic
+		result pagination.PaginatedRes
 	}
 
 	cases := []struct { //nolint:wsl
@@ -62,12 +63,55 @@ func TestRetrieve(t *testing.T) {
 				filter: &straffic.FilterRequest{
 					ID: "209e7c87-84f9-41d0-a5b7-002f5d8d886ds",
 					Ip: "192.168.1.100",
+					Filter: pagination.Filter{
+						Page:     1,
+						Size:     10,
+						Offset:   0,
+						SortBy:   "created_at",
+						SortDesc: true,
+					},
 				},
-				expected: []straffic.Traffic{},
+				expected: pagination.PaginatedRes{
+					Data:        []straffic.Traffic(nil),
+					CurrentPage: 1,
+					Pages:       1,
+					Total:       10,
+				},
 			},
 			err: false,
 			asserts: func(t *testing.T, err error, ap assertsParams) bool {
-				return assert.NoError(t, err) &&
+				return assert.NotNil(t, ap.result) &&
+					assert.NoError(t, err) &&
+					ap.trafficRepo.AssertExpectations(t)
+			},
+		},
+		{
+			name: "Happy path with sanitize",
+			repositoryOpts: repositoryOpts{
+				trafficRepoFunc: func() *trafficmocks.IRepository {
+					repositoryMock := &trafficmocks.IRepository{}
+					repositoryMock.On("Retrieve", mock.Anything, mock.Anything).
+						Return([]otraffic.Model{}, 0, 0, nil)
+
+					return repositoryMock
+				},
+			},
+			args: args{
+				filter: &straffic.FilterRequest{
+					ID: "209e7c87-84f9-41d0-a5b7-002f5d8d886ds",
+					Ip: "192.168.1.100",
+					Filter: pagination.Filter{
+						Page:   1,
+						Size:   100,
+						Offset: 100,
+					},
+				},
+				expected: pagination.PaginatedRes{},
+			},
+			err: false,
+			asserts: func(t *testing.T, err error, ap assertsParams) bool {
+				return assert.NotNil(t, ap.result) &&
+					assert.NoError(t, err) &&
 					ap.trafficRepo.AssertExpectations(t)
 			},
 		},
@@ -82,12 +126,18 @@ func TestRetrieve(t *testing.T) {
 				},
 			},
 			args: args{
-				filter:   &straffic.FilterRequest{},
-				expected: []straffic.Traffic{},
+				filter: &straffic.FilterRequest{},
+				expected: pagination.PaginatedRes{
+					Data:        []straffic.Traffic(nil),
+					CurrentPage: 1,
+					Pages:       1,
+					Total:       10,
+				},
 			},
 			err: false,
 			asserts: func(t *testing.T, err error, ap assertsParams) bool {
-				return assert.NoError(t, err) &&
+				return assert.NotNil(t, ap.result) &&
+					assert.NoError(t, err) &&
 					ap.trafficRepo.AssertExpectations(t)
 			},
 		},
@@ -104,7 +154,7 @@ func TestRetrieve(t *testing.T) {
 			},
 			args: args{
 				filter:   &straffic.FilterRequest{},
-				expected: []straffic.Traffic{},
+				expected: pagination.PaginatedRes{},
 			},
 			err: true,
 			asserts: func(t *testing.T, err error, ap assertsParams) bool {

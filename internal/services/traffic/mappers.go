@@ -1,10 +1,12 @@
 package traffic
 
 import (
-	"github.com/jmontesinos91/collector/internal/repositories/traffic"
-	"github.com/jmontesinos91/terrors"
+	"github.com/jmontesinos91/collector/domains/pagination"
 	"net/http"
 	"strconv"
+
+	"github.com/jmontesinos91/collector/internal/repositories/traffic"
+	"github.com/jmontesinos91/terrors"
 )
 
 // ParseFilterRequest builds a single filter object given http params
@@ -48,6 +50,38 @@ func ParseFilterRequest(r *http.Request) (*FilterRequest, error) {
 		fr.IsAlarm = &isAlarm
 	}
 
+	if SortBy := query.Get("sortBy"); SortBy != "" {
+		fr.Filter.SortBy = SortBy
+	}
+
+	if sortDescStr := query.Get("sortDesc"); sortDescStr != "" {
+		sortDesc, err := strconv.ParseBool(sortDescStr)
+		if err != nil {
+			return nil, terrors.New(terrors.ErrBadRequest, "Invalid sortDesc parameter", map[string]string{})
+		}
+		fr.Filter.SortDesc = sortDesc
+	}
+
+	if offset := query.Get("offset"); offset != "" {
+		fr.Filter.SortBy = offset
+	}
+
+	if perPageStr := query.Get("size"); perPageStr != "" {
+		perPage, err := strconv.Atoi(perPageStr)
+		if err != nil {
+			return nil, terrors.New(terrors.ErrBadRequest, "Invalid size parameter", map[string]string{})
+		}
+		fr.Filter.Size = perPage
+	}
+
+	if pageStr := query.Get("page"); pageStr != "" {
+		page, err := strconv.Atoi(pageStr)
+		if err != nil {
+			return nil, terrors.New(terrors.ErrBadRequest, "Invalid page parameter", map[string]string{})
+		}
+		fr.Filter.Page = page
+	}
+
 	if action := query.Get("action"); action != "" {
 		switch action {
 		case "list":
@@ -68,6 +102,16 @@ func ToResponse(data interface{}, status string, message string) Response {
 		Status:  status,
 		Message: message,
 		Data:    data,
+	}
+}
+
+// ToPaginatedResponse builds a paginated response object given the argument values
+func ToPaginatedResponse(data interface{}, currentPage, pages, total int) pagination.PaginatedRes {
+	return pagination.PaginatedRes{
+		Data:        data,
+		CurrentPage: currentPage,
+		Pages:       pages,
+		Total:       total,
 	}
 }
 

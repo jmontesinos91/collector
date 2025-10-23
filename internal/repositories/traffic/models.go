@@ -1,6 +1,7 @@
 package traffic
 
 import (
+	"github.com/jmontesinos91/collector/domains/pagination"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -30,4 +31,5 @@ type Metadata struct {
 	Ip      string
 	IsAlarm *bool
 	Counter *int
+	Filter  pagination.Filter
 }

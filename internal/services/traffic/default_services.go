@@ -3,6 +3,7 @@ package traffic
 import (
 	"context"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jmontesinos91/collector/domains/pagination"
 	otraffic "github.com/jmontesinos91/collector/internal/repositories/traffic"
 	"github.com/jmontesinos91/ologs/logger"
 	tracekey "github.com/jmontesinos91/ologs/logger/v2"
@@ -23,12 +24,12 @@ func NewDefaultService(l *logger.ContextLogger, tr otraffic.IRepository) *Defaul
 	}
 }
 
-func (s *DefaultService) HandleRetrieve(ctx context.Context, filter *FilterRequest) ([]Traffic, error) {
+func (s *DefaultService) HandleRetrieve(ctx context.Context, filter *FilterRequest) (pagination.PaginatedRes, error) {
 	requestID := ctx.Value(middleware.RequestIDKey).(string)
 	claims := ctx.Value(&sts.Claim).(sts.Claims)
 
 	repoFilter := ToMetadata(filter)
-	trafficModels, err := s.trafficRepo.Retrieve(ctx, repoFilter)
+	trafficModels, pages, totalRecords, err := s.trafficRepo.Retrieve(ctx, repoFilter)
 	if err != nil {
 		s.log.WithContext(logrus.ErrorLevel,
 			"HandleRetrieve",
@@ -39,10 +40,10 @@ func (s *DefaultService) HandleRetrieve(ctx context.Context, filter *FilterReque
 				tracekey.Role:       claims.Role,
 			},
 			err)
-		return []Traffic{}, err
+		return pagination.PaginatedRes{}, err
 	}
 
-	return ToTrafficSlice(trafficModels), nil
+	return ToPaginatedResponse(ToTrafficSlice(trafficModels), filter.Filter.Page, pages, totalRecords), nil
 }
 
 func (s *DefaultService) HandleDelete(ctx context.Context, trafficID string) error {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"math"
 	"time"
 
 	"github.com/jmontesinos91/ologs/logger"
@@ -104,19 +105,39 @@ func (r *DatabaseRepository) UpdateByIMEI(ctx context.Context, imei, request str
 }
 
 // Retrieve Retrieves traffic data by filters
-func (r *DatabaseRepository) Retrieve(ctx context.Context, filter *Metadata) ([]Model, error) {
+func (r *DatabaseRepository) Retrieve(ctx context.Context, filter *Metadata) ([]Model, int, int, error) {
 	var traffics []Model
 
 	query := r.db.NewSelect().Model(&Model{})
 
 	query = setFilters(query, filter)
 
-	if err := query.Scan(ctx, &traffics); err != nil {
-		r.log.Error(logrus.ErrorLevel, "Retrieve", "Error scanning traffics", err)
-		return nil, terrors.InternalService("count_error", "Error retrieving traffics from the database", map[string]string{})
+	pages, total, err := paginationMeta(ctx, query, filter)
+	if err != nil {
+		r.log.Error(logrus.ErrorLevel, "Retrieve", "Error counting records", err)
+		return nil, 0, 0, terrors.InternalService("count_error", "Error counting records in the database", map[string]string{})
 	}
 
-	return traffics, nil
+	if filter.Filter.Size > 0 {
+		query = query.Limit(filter.Filter.Size).Offset((filter.Filter.Page - 1) * filter.Filter.Size) // perPage = size //offset = offset
+	}
+
+	if filter.Filter.SortBy != "" {
+		order := filter.Filter.SortBy
+		if filter.Filter.SortDesc {
+			order += " " + "DESC"
+		} else {
+			order += " " + "ASC"
+		}
+		query = query.Order(order)
+	}
+
+	if err := query.Scan(ctx, &traffics); err != nil {
+		r.log.Error(logrus.ErrorLevel, "Retrieve", "Error scanning traffics", err)
+		return nil, 0, 0, terrors.InternalService("count_error", "Error retrieving traffics from the database", map[string]string{})
+	}
+
+	return traffics, pages, total, nil
 }
 
 // DeleteByID Handles update the register by IMEI
@@ -186,4 +207,16 @@ func setFilters(q *bun.SelectQuery, filter *Metadata) *bun.SelectQuery {
 	})
 
 	return q
+}
+
+func paginationMeta(ctx context.Context, q *bun.SelectQuery, filter *Metadata) (int, int, error) {
+	totalRecords := 0
+
+	countQuery := q.NewSelect().Model(&Model{})
+	countQuery = setFilters(countQuery, filter)
+	if err := countQuery.ColumnExpr("COUNT(*)").Scan(ctx, &totalRecords); err != nil {
+		return 0, 0, err
+	}
+
+	return int(math.Ceil(float64(totalRecords) / float64(filter.Filter.Size))), totalRecords, nil
 }

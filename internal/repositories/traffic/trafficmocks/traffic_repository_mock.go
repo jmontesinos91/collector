@@ -93,12 +93,14 @@ func (_m *IRepository) FindByLastUsed(ctx context.Context) ([]traffic.Model, err
 }
 
 // Retrieve provides a mock function with given fields: ctx, filter
-func (_m *IRepository) Retrieve(ctx context.Context, filter *traffic.Metadata) ([]traffic.Model, error) {
+func (_m *IRepository) Retrieve(ctx context.Context, filter *traffic.Metadata) ([]traffic.Model, int, int, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []traffic.Model
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *traffic.Metadata) ([]traffic.Model, error)); ok {
+	var r1 int
+	var r2 int
+	var r3 error
+	if rf, ok := ret.Get(0).(func(context.Context, *traffic.Metadata) ([]traffic.Model, int, int, error)); ok {
 		return rf(ctx, filter)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, *traffic.Metadata) []traffic.Model); ok {
@@ -109,13 +111,25 @@ func (_m *IRepository) Retrieve(ctx context.Context, filter *traffic.Metadata) (
 		}
 	}
 
-	if rf, ok := ret.Get(3).(func(context.Context, *traffic.Metadata) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *traffic.Metadata) int); ok {
 		r1 = rf(ctx, filter)
 	} else {
-		r1 = ret.Error(3)
+		r1 = ret.Get(1).(int)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context, *traffic.Metadata) int); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Get(2).(int)
+	}
+
+	if rf, ok := ret.Get(3).(func(context.Context, *traffic.Metadata) error); ok {
+		r3 = rf(ctx, filter)
+	} else {
+		r3 = ret.Error(3)
+	}
+
+	return r0, r1, r2, r3
 }
 
 // RetrieveData provides a mock function with given fields: ctx, filter

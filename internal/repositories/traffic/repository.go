@@ -11,7 +11,7 @@ type IRepository interface {
 	FindByLastUsed(ctx context.Context) ([]Model, error)
 	UpdateIsNotified(ctx context.Context, trafficID string) error
 	UpdateByIMEI(ctx context.Context, imei, request string, isAlarm bool) error
-	Retrieve(ctx context.Context, filter *Metadata) ([]Model, error)
+	Retrieve(ctx context.Context, filter *Metadata) ([]Model, int, int, error)
 	DeleteByID(ctx context.Context, trafficID string) error
 	RetrieveData(ctx context.Context, filter *Metadata) ([]Model, error)
 }
