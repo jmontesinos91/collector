@@ -8,7 +8,7 @@ require (
 	github.com/go-sql-driver/mysql v1.9.2
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.5
-	github.com/jmontesinos91/oevents v1.4.3
+	github.com/jmontesinos91/oevents v1.4.2
 	github.com/jmontesinos91/ologs v1.2.4
 	github.com/jmontesinos91/osecurity v1.8.2
 	github.com/jmontesinos91/terrors v1.1.3
