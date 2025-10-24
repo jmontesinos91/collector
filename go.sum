@@ -181,8 +181,8 @@ github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD
 github.com/jinzhu/inflection v1.0.0/go.mod h1:h+uFLlag+Qp1Va5pdKtLDYj+kHp5pxUVkryuEj+Srlc=
 github.com/jmespath/go-jmespath v0.4.0/go.mod h1:T8mJZnbsbmF+m6zOOFylbeCJqk5+pHWvzYPziyZiYoo=
 github.com/jmespath/go-jmespath/internal/testify v1.5.1/go.mod h1:L3OGu8Wl2/fWfCI6z80xFu9LTZmf1ZRjMHUOPmWr69U=
-github.com/jmontesinos91/oevents v1.4.2 h1:fhOgrpDMLLcIh2+VV5RG+rD9CIlg+blkBgfbJh2WINg=
-github.com/jmontesinos91/oevents v1.4.2/go.mod h1:tFdrNk8r1xSHW/iQ4ZDRUFL/u8WgO+iX6qD1TbHkWSo=
+github.com/jmontesinos91/oevents v1.4.3 h1:dDCBfySRGGAInNx77/F5JDvi4YcnSgcCaoHHJ5OgkAA=
+github.com/jmontesinos91/oevents v1.4.3/go.mod h1:tFdrNk8r1xSHW/iQ4ZDRUFL/u8WgO+iX6qD1TbHkWSo=
 github.com/jmontesinos91/ologs v1.2.4 h1:gZUYv0vrGFli7THkdh0Ll5/SJNH6gQlw8cAZZEwB/V8=
 github.com/jmontesinos91/ologs v1.2.4/go.mod h1:DD+63QDqt5MnoBgbMiJ4MzFi+vuYVpqmdOj0nwuIOrw=
 github.com/jmontesinos91/osecurity v1.8.2 h1:Wwiq/65h0AZ0+X8uJEDcGGtox7KLt9WSF5MX6kMj6zk=

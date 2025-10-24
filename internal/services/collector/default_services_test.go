@@ -83,6 +83,12 @@ func TestCollect(t *testing.T) {
 						Return(&router.Response{Success: true}, nil)
 					return routerMock
 				},
+				streamClientFunc: func() *brokermock.MessagingBrokerProvider {
+					streamClientMock := new(brokermock.MessagingBrokerProvider)
+					streamClientMock.On("Publish", mock.Anything, mock.Anything, mock.Anything).
+						Return(true)
+					return streamClientMock
+				},
 			},
 			repositoryOpts: repositoryOpts{
 				trafficRepoFunc: func() *trafficmocks.IRepository {
@@ -122,7 +128,9 @@ func TestCollect(t *testing.T) {
 					ap.routerClient.AssertExpectations(t) &&
 					ap.routerClient.AssertCalled(t, "ValidateIMEI", mock.Anything, mock.Anything) &&
 					ap.trafficRepo.AssertExpectations(t) &&
-					ap.trafficRepo.AssertCalled(t, "Create", mock.Anything, mock.Anything)
+					ap.trafficRepo.AssertCalled(t, "Create", mock.Anything, mock.Anything) &&
+					ap.streamClient.AssertExpectations(t) &&
+					ap.streamClient.AssertCalled(t, "Publish", mock.Anything, mock.Anything, mock.Anything)
 			},
 		},
 		{
@@ -133,6 +141,12 @@ func TestCollect(t *testing.T) {
 					routerMock.On("ValidateIMEI", mock.Anything, mock.Anything).
 						Return(&router.Response{Success: true}, nil)
 					return routerMock
+				},
+				streamClientFunc: func() *brokermock.MessagingBrokerProvider {
+					streamClientMock := new(brokermock.MessagingBrokerProvider)
+					streamClientMock.On("Publish", mock.Anything, mock.Anything, mock.Anything).
+						Return(true)
+					return streamClientMock
 				},
 			},
 			repositoryOpts: repositoryOpts{
