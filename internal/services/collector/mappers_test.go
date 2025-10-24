@@ -1,12 +1,9 @@
 package collector
 
 import (
-	straffic "github.com/jmontesinos91/collector/internal/services/traffic"
-	"github.com/jmontesinos91/oevents/eventfactory"
 	"net/http"
 	"net/url"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -289,93 +286,4 @@ func TestToModel(t *testing.T) {
 	assert.Equal(t, payload.IMEI, model.IMEI, "Expected IMEI to match")
 	assert.Equal(t, payload.IP, model.Ip, "Expected IP to match")
 	assert.Equal(t, true, model.IsAlarm, "Expected Alarm to match")
-}
-
-func TestToEventAlarmPayload(t *testing.T) {
-	eventDate := time.Now().UTC().Format(time.RFC3339)
-	type args struct { //nolint:wsl
-		model     straffic.Alarm
-		requestID string
-		eventDate string
-		expected  eventfactory.AlarmPayload
-	}
-	tests := []struct {
-		name string
-		args
-		expectedNotEqual bool
-	}{
-		{
-			name: "Happy path",
-			args: args{
-				requestID: "unit-test-request-id",
-				eventDate: eventDate,
-				model: straffic.Alarm{
-					IMEI:      "861585041440544",
-					Latitude:  "1.23456789",
-					Longitude: "1.23456789",
-					AlarmType: "0",
-					Waiting:   "1",
-					Attending: "1",
-				},
-				expected: eventfactory.AlarmPayload{
-					Id:        "unit-test-request-id",
-					IMEI:      "861585041440544",
-					Latitude:  "1.23456789",
-					Longitude: "1.23456789",
-					AlarmType: "0",
-					Waiting:   "1",
-					Attending: "1",
-					EventDate: eventDate,
-				},
-			},
-		},
-		{
-			name: "Empty Values",
-			args: args{
-				requestID: "",
-				eventDate: "",
-				model:     straffic.Alarm{},
-				expected:  eventfactory.AlarmPayload{},
-			},
-		},
-		{
-			name: "Wrong Data",
-			args: args{
-				requestID: "unit-test-request-id",
-				eventDate: eventDate,
-				model: straffic.Alarm{
-					IMEI:      "861585041440544",
-					Latitude:  "1.23456789",
-					Longitude: "1.23456789",
-					AlarmType: "0",
-					Waiting:   "1",
-					Attending: "1",
-				},
-				expected: eventfactory.AlarmPayload{
-					Id:        "unit-test-request-id",
-					IMEI:      "861585041440544",
-					Latitude:  "1.23456789",
-					Longitude: "1.23456789",
-					AlarmType: "0",
-					Waiting:   "0",
-					Attending: "0",
-					EventDate: eventDate,
-				},
-			},
-			expectedNotEqual: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			response := ToEventAlarmPayload(tt.model, tt.requestID, tt.eventDate)
-
-			if !tt.expectedNotEqual {
-				assert.Equal(t, tt.expected, response)
-			} else {
-				assert.NotEqual(t, tt.expectedNotEqual, response)
-			}
-		})
-	}
 }

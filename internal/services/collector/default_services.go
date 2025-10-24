@@ -2,10 +2,6 @@ package collector
 
 import (
 	"context"
-	"fmt"
-	straffic "github.com/jmontesinos91/collector/internal/services/traffic"
-	"github.com/jmontesinos91/oevents"
-	"github.com/jmontesinos91/oevents/eventfactory"
 	"strconv"
 	"time"
 
@@ -100,30 +96,12 @@ func (s *DefaultService) Collector(ctx context.Context, payload *Payload) error 
 				waiting = "1"
 			}
 
-			alarm := straffic.Alarm{
-				IMEI:      payload.IMEI,
-				Latitude:  payload.Longitude,
-				Longitude: payload.Latitude,
-				AlarmType: alarmType,
-				Attending: payload.Attending,
-				Waiting:   waiting,
-			}
-
-			eventID, err := s.publishAlarmEvent(ctx, alarm, requestID)
-			if err != nil {
-				s.log.WithContext(
-					logrus.ErrorLevel,
-					"Collector",
-					"The alarm event could not be published:",
-					logger.Context{}, err)
-			}
-
 			s.log.WithContext(
 				logrus.InfoLevel,
 				"Collector",
-				"Alarm requested event published",
+				"Alarm Identified",
 				logger.Context{
-					"EventID": eventID,
+					"Waiting": waiting,
 				}, err)
 		}
 
@@ -242,18 +220,4 @@ func (s *DefaultService) updateRouterPosition(ctx context.Context, routerID, uni
 	}
 
 	return nil
-}
-
-func (s *DefaultService) publishAlarmEvent(ctx context.Context, alarm straffic.Alarm, requestID string) (string, error) {
-	alarmEvent, err := eventfactory.NewAlarmAcceptedEvent(eventfactory.SourceCollector, ToEventAlarmPayload(alarm, requestID, time.Now().UTC().Format(time.RFC3339)))
-	if err != nil {
-		return "", err
-	}
-
-	ok := s.streamClient.Publish(ctx, oevents.WebHookOmniViewTopic, *alarmEvent)
-	if !ok {
-		return "", fmt.Errorf("event [%s] could not be published", alarmEvent.EventType)
-	}
-
-	return alarmEvent.ID, nil
 }

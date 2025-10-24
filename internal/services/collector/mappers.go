@@ -1,8 +1,6 @@
 package collector
 
 import (
-	straffic "github.com/jmontesinos91/collector/internal/services/traffic"
-	"github.com/jmontesinos91/oevents/eventfactory"
 	"net/http"
 	"strings"
 	"time"
@@ -94,18 +92,5 @@ func (p *Payload) ToModel(isAlarm bool) traffic.Model {
 		IsNotified: false,
 		CreatedAt:  time.Now().UTC(),
 		UpdatedAt:  time.Now().UTC(),
-	}
-}
-
-func ToEventAlarmPayload(alarm straffic.Alarm, requestID, eventDate string) eventfactory.AlarmPayload {
-	return eventfactory.AlarmPayload{
-		Id:        requestID,
-		IMEI:      alarm.IMEI,
-		Latitude:  alarm.Latitude,
-		Longitude: alarm.Longitude,
-		AlarmType: alarm.AlarmType,
-		Waiting:   alarm.Waiting,
-		Attending: alarm.Attending,
-		EventDate: eventDate,
 	}
 }
