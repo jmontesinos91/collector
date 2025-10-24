@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestCollectF2P(t *testing.T) {
+func TestCollect(t *testing.T) {
 	var ctxBack context.Context
 	log := logger.NewContextLogger("GO-STARTER-TEMPLATE-UNIT-TEST", "debug", logger.TextFormat)
 	ctxBack = context.Background()
@@ -162,10 +162,9 @@ func TestCollectF2P(t *testing.T) {
 			},
 			args: args{
 				collect: &collector.Payload{
-					Request:      "P,12,12,,53438,12,123456789,123456789,00,00,00,1",
+					Request:      "P,12,12,,,12,123456789,123456789,00,00,00,1",
 					IP:           "192.168.100.1",
 					IMEI:         "",
-					UnitID:       "53438",
 					Latitude:     "123456789",
 					Longitude:    "123456789",
 					Attending:    "0",
@@ -250,10 +249,9 @@ func TestCollectF2P(t *testing.T) {
 			},
 			args: args{
 				collect: &collector.Payload{
-					Request:      "0000002c0,12,12,,53438,12,123456789,123456789,00,00,00,1",
+					Request:      "0000002c0,12,12,,,12,123456789,123456789,00,00,00,1",
 					IP:           "192.168.100.1",
 					IMEI:         "",
-					UnitID:       "53438",
 					Latitude:     "123456789",
 					Longitude:    "123456789",
 					Attending:    "0",
@@ -382,6 +380,12 @@ func TestCollectF2P(t *testing.T) {
 					routerMock.On("ValidateIMEI", mock.Anything, mock.Anything).
 						Return(&router.Response{Success: true}, nil)
 					return routerMock
+				},
+				streamClientFunc: func() *brokermock.MessagingBrokerProvider {
+					streamClientMock := new(brokermock.MessagingBrokerProvider)
+					streamClientMock.On("Publish", mock.Anything, mock.Anything, mock.Anything).
+						Return(true)
+					return streamClientMock
 				},
 			},
 			repositoryOpts: repositoryOpts{

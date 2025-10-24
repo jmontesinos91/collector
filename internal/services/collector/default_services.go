@@ -78,7 +78,6 @@ func (s *DefaultService) Collector(ctx context.Context, payload *Payload) error 
 		request := router.Request{
 			IMEI:      payload.IMEI,
 			AlarmType: alarmType,
-			UnitID:    payload.UnitID,
 		}
 
 		//Call to API //wait for the endpoint with IMEI

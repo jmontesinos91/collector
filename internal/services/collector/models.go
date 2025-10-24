@@ -5,7 +5,6 @@ type Payload struct {
 	GPRS         string `json:"gprs"`
 	Scare        string `json:"scare"`
 	IMEI         string `json:"imei"`
-	UnitID       string `json:"unitID"`
 	Latitude     string `json:"latitude"`
 	Longitude    string `json:"longitude"`
 	Attending    string `json:"attending"`
