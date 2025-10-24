@@ -389,3 +389,91 @@ func TestToEventAlarmPayload(t *testing.T) {
 		})
 	}
 }
+
+func TestToAlarm(t *testing.T) {
+	type args struct { //nolint:wsl
+		payload   Payload
+		IMEI      string
+		alarmType string
+		waiting   string
+		expected  straffic.Alarm
+	}
+	tests := []struct {
+		name string
+		args
+		expectedNotEqual bool
+	}{
+		{
+			name: "Happy path",
+			args: args{
+				IMEI:      "861585041440544",
+				alarmType: "183",
+				waiting:   "0",
+				payload: Payload{
+					IMEI:      "861585041440544",
+					Latitude:  "1.23456789",
+					Longitude: "1.23456789",
+					Attending: "0",
+				},
+				expected: straffic.Alarm{
+					IMEI:      "861585041440544",
+					Latitude:  "1.23456789",
+					Longitude: "1.23456789",
+					AlarmType: "183",
+					Waiting:   "0",
+					Attending: "0",
+				},
+			},
+		},
+		{
+			name: "Empty Payload",
+			args: args{
+				IMEI:      "861585041440544",
+				alarmType: "183",
+				waiting:   "0",
+				payload:   Payload{},
+				expected: straffic.Alarm{
+					IMEI:      "861585041440544",
+					AlarmType: "183",
+					Waiting:   "0",
+				},
+			},
+		},
+		{
+			name: "Wrong Data",
+			args: args{
+				IMEI:      "861585041440544",
+				alarmType: "183",
+				waiting:   "0",
+				payload: Payload{
+					IMEI:      "861585041440544",
+					Latitude:  "1.23456789",
+					Longitude: "1.23456789",
+					Attending: "0",
+				},
+				expected: straffic.Alarm{
+					IMEI:      "861585041440544",
+					Latitude:  "1.23456789",
+					Longitude: "1.23456789",
+					AlarmType: "0",
+					Waiting:   "1",
+					Attending: "1",
+				},
+			},
+			expectedNotEqual: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			response := tt.payload.ToAlarm(tt.IMEI, tt.alarmType, tt.waiting)
+
+			if !tt.expectedNotEqual {
+				assert.Equal(t, tt.expected, response)
+			} else {
+				assert.NotEqual(t, tt.expectedNotEqual, response)
+			}
+		})
+	}
+}

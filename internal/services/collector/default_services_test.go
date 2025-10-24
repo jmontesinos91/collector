@@ -79,7 +79,7 @@ func TestCollect(t *testing.T) {
 			fields: fields{
 				routerClientFunc: func() *routermock.IClient {
 					routerMock := &routermock.IClient{}
-					routerMock.On("ValidateIMEI", mock.Anything, mock.Anything).
+					routerMock.On("ValidateIMEI", mock.Anything, router.Request{IMEI: "861585041440544", UnitID: "", AlarmType: "0"}).
 						Return(&router.Response{Success: true}, nil)
 					return routerMock
 				},
@@ -109,6 +109,65 @@ func TestCollect(t *testing.T) {
 					Longitude:    "123456789",
 					Attending:    "0",
 					ConfirmPanic: "1",
+					Scare:        "P",
+					GPRS:         "",
+				},
+				model: otraffic.Model{
+					ID:        "12345",
+					Request:   "qwertyui128765431425",
+					IMEI:      "861585042478659",
+					Ip:        "192.168.100.1",
+					IsAlarm:   true,
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				},
+			},
+			err: false,
+			asserts: func(t *testing.T, err error, ap assertsParams) bool {
+				return assert.NoError(t, err) &&
+					ap.routerClient.AssertExpectations(t) &&
+					ap.routerClient.AssertCalled(t, "ValidateIMEI", mock.Anything, mock.Anything) &&
+					ap.trafficRepo.AssertExpectations(t) &&
+					ap.trafficRepo.AssertCalled(t, "Create", mock.Anything, mock.Anything) &&
+					ap.streamClient.AssertExpectations(t) &&
+					ap.streamClient.AssertCalled(t, "Publish", mock.Anything, mock.Anything, mock.Anything)
+			},
+		},
+		{
+			name: "Happy Path ConfirmPanic 3",
+			fields: fields{
+				routerClientFunc: func() *routermock.IClient {
+					routerMock := &routermock.IClient{}
+					routerMock.On("ValidateIMEI", mock.Anything, router.Request{IMEI: "861585041440544", UnitID: "", AlarmType: "183"}).
+						Return(&router.Response{Success: true}, nil)
+					return routerMock
+				},
+				streamClientFunc: func() *brokermock.MessagingBrokerProvider {
+					streamClientMock := new(brokermock.MessagingBrokerProvider)
+					streamClientMock.On("Publish", mock.Anything, mock.Anything, mock.Anything).
+						Return(true)
+					return streamClientMock
+				},
+			},
+			repositoryOpts: repositoryOpts{
+				trafficRepoFunc: func() *trafficmocks.IRepository {
+					repositoryMock := &trafficmocks.IRepository{}
+					repositoryMock.On("FindByIMEI", mock.Anything, mock.Anything, mock.Anything).
+						Return(false, nil)
+					repositoryMock.On("Create", mock.Anything, mock.Anything).
+						Return(nil)
+					return repositoryMock
+				},
+			},
+			args: args{
+				collect: &collector.Payload{
+					Request:      "P,12,12,861585041440544,12,12,123456789,123456789,00,00,00,3",
+					IP:           "192.168.100.1",
+					IMEI:         "861585041440544",
+					Latitude:     "123456789",
+					Longitude:    "123456789",
+					Attending:    "0",
+					ConfirmPanic: "3",
 					Scare:        "P",
 					GPRS:         "",
 				},
