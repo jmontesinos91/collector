@@ -76,10 +76,22 @@ func (s *DefaultService) Collector(ctx context.Context, payload *Payload) error 
 		IMEI = payload.UnitID
 	}
 
-	if payload.Scare == "P" && (payload.ConfirmPanic == "1" || payload.ConfirmPanic == "2") {
+	if payload.Scare == "P" && (payload.ConfirmPanic == "1" || payload.ConfirmPanic == "2" || payload.ConfirmPanic == "3") {
 
 		if payload.ConfirmPanic == "2" {
 			alarmType = "3"
+		}
+
+		if payload.ConfirmPanic == "3" {
+			s.log.WithContext(
+				logrus.InfoLevel,
+				"Collector",
+				"ConfirmPanic are 3",
+				logger.Context{
+					tracekey.TrackingID: requestID,
+					"ConfirmPanic":      payload.ConfirmPanic,
+				}, nil)
+			alarmType = "183"
 		}
 
 		request := router.Request{
@@ -108,14 +120,7 @@ func (s *DefaultService) Collector(ctx context.Context, payload *Payload) error 
 				waiting = "1"
 			}
 
-			alarm := straffic.Alarm{
-				IMEI:      IMEI,
-				Latitude:  payload.Latitude,
-				Longitude: payload.Longitude,
-				AlarmType: alarmType,
-				Attending: payload.Attending,
-				Waiting:   waiting,
-			}
+			alarm := payload.ToAlarm(IMEI, alarmType, waiting)
 
 			eventID, err := s.publishAlarmEvent(ctx, alarm, requestID)
 			if err != nil {

@@ -102,6 +102,17 @@ func (p *Payload) ToModel(isAlarm bool) traffic.Model {
 	}
 }
 
+func (p *Payload) ToAlarm(IMEI, alarmType, waiting string) straffic.Alarm {
+	return straffic.Alarm{
+		IMEI:      IMEI,
+		Latitude:  p.Latitude,
+		Longitude: p.Longitude,
+		AlarmType: alarmType,
+		Attending: p.Attending,
+		Waiting:   waiting,
+	}
+}
+
 func ToEventAlarmPayload(alarm straffic.Alarm, requestID, eventDate string) eventfactory.AlarmPayload {
 	return eventfactory.AlarmPayload{
 		Id:        requestID,
