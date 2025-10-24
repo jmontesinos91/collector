@@ -68,6 +68,13 @@ func (s *DefaultService) Collector(ctx context.Context, payload *Payload) error 
 	requestID := ctx.Value(middleware.RequestIDKey).(string)
 	var alarmType = "0"
 	var isAlarm = false
+	var isUnitID = false
+	IMEI := payload.IMEI
+
+	if payload.UnitID != "" {
+		isUnitID = true
+		IMEI = payload.UnitID
+	}
 
 	if payload.Scare == "P" && (payload.ConfirmPanic == "1" || payload.ConfirmPanic == "2") {
 
@@ -78,6 +85,7 @@ func (s *DefaultService) Collector(ctx context.Context, payload *Payload) error 
 		request := router.Request{
 			IMEI:      payload.IMEI,
 			AlarmType: alarmType,
+			UnitID:    payload.UnitID,
 		}
 
 		//Call to API //wait for the endpoint with IMEI
@@ -101,7 +109,7 @@ func (s *DefaultService) Collector(ctx context.Context, payload *Payload) error 
 			}
 
 			alarm := straffic.Alarm{
-				IMEI:      payload.IMEI,
+				IMEI:      IMEI,
 				Latitude:  payload.Latitude,
 				Longitude: payload.Longitude,
 				AlarmType: alarmType,
@@ -127,7 +135,7 @@ func (s *DefaultService) Collector(ctx context.Context, payload *Payload) error 
 				}, err)
 		}
 
-		errM := s.createOrUpdateTraffic(ctx, payload, isAlarm, requestID)
+		errM := s.createOrUpdateTraffic(ctx, payload, isAlarm, isUnitID, requestID)
 		if errM != nil {
 			return terrors.New(terrors.ErrBadRequest, terrors.MsgBadRequest, map[string]string{})
 		}
@@ -142,7 +150,7 @@ func (s *DefaultService) Collector(ctx context.Context, payload *Payload) error 
 			}
 		}
 
-		err := s.createOrUpdateTraffic(ctx, payload, isAlarm, requestID)
+		err := s.createOrUpdateTraffic(ctx, payload, isAlarm, isUnitID, requestID)
 		if err != nil {
 			return terrors.New(terrors.ErrBadRequest, terrors.MsgBadRequest, map[string]string{})
 		}
@@ -164,8 +172,11 @@ func (s *DefaultService) validateRouter(ctx context.Context, payload *Payload) (
 	return unit.IsVehicle, routerModel.ID, unit.ID
 }
 
-func (s *DefaultService) createOrUpdateTraffic(ctx context.Context, payload *Payload, isAlarm bool, requestID string) error {
+func (s *DefaultService) createOrUpdateTraffic(ctx context.Context, payload *Payload, isAlarm, isUnitID bool, requestID string) error {
 	IMEI := payload.IMEI
+	if isUnitID {
+		IMEI = payload.UnitID
+	}
 
 	finder, err := s.trafficRepo.FindByIMEI(ctx, IMEI, isAlarm)
 	if err != nil {

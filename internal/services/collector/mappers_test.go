@@ -147,12 +147,13 @@ func TestParsePayload(t *testing.T) {
 		{
 			name: "Empty IMEI",
 			queryParams: map[string]string{
-				"router": "P,12,192.168.100.1,,,12,123456789,123456789,00,00,00,1",
+				"router": "P,12,192.168.100.1,,53438,12,123456789,123456789,00,00,00,1",
 			},
 			expected: &Payload{
-				Request:      "P,12,192.168.100.1,,,12,123456789,123456789,00,00,00,1",
+				Request:      "P,12,192.168.100.1,,53438,12,123456789,123456789,00,00,00,1",
 				IP:           "192.168.100.1",
 				IMEI:         "",
+				UnitID:       "53438",
 				Latitude:     "123456789",
 				Longitude:    "123456789",
 				Attending:    "0",
@@ -161,6 +162,15 @@ func TestParsePayload(t *testing.T) {
 				GPRS:         "P",
 			},
 			expectError: false,
+		},
+		{
+			name: "Empty IMEI and UnitID",
+			queryParams: map[string]string{
+				"router": "P,12,192.168.100.1,,,12,123456789,123456789,00,00,00,1",
+			},
+			expected:    &Payload{},
+			expectError: true,
+			errorMsg:    "bad_request: Invalid Request String",
 		},
 		{
 			name:        "Empty Value",

@@ -134,6 +134,167 @@ func TestCollect(t *testing.T) {
 			},
 		},
 		{
+			name: "Happy Path with UnitID with Alarm",
+			fields: fields{
+				routerClientFunc: func() *routermock.IClient {
+					routerMock := &routermock.IClient{}
+					routerMock.On("ValidateIMEI", mock.Anything, mock.Anything).
+						Return(&router.Response{Success: true}, nil)
+					return routerMock
+				},
+				streamClientFunc: func() *brokermock.MessagingBrokerProvider {
+					streamClientMock := new(brokermock.MessagingBrokerProvider)
+					streamClientMock.On("Publish", mock.Anything, mock.Anything, mock.Anything).
+						Return(true)
+					return streamClientMock
+				},
+			},
+			repositoryOpts: repositoryOpts{
+				trafficRepoFunc: func() *trafficmocks.IRepository {
+					repositoryMock := &trafficmocks.IRepository{}
+					repositoryMock.On("FindByIMEI", mock.Anything, mock.Anything, mock.Anything).
+						Return(false, nil)
+					repositoryMock.On("Create", mock.Anything, mock.Anything).
+						Return(nil)
+					return repositoryMock
+				},
+				oldRouterRepoFunc: func() *routeroldmocks.IRepository {
+					repositoryMock := &routeroldmocks.IRepository{}
+					repositoryMock.On("FindByIMEI", mock.Anything, mock.Anything).
+						Return(&routerold.RouterModel{}, nil)
+					repositoryMock.On("ActiveAndDeactivateRouter", mock.Anything, mock.Anything, mock.Anything).
+						Return(nil)
+					return repositoryMock
+				},
+			},
+			args: args{
+				collect: &collector.Payload{
+					Request:      "P,12,12,,53438,12,123456789,123456789,00,00,00,1",
+					IP:           "192.168.100.1",
+					IMEI:         "",
+					UnitID:       "53438",
+					Latitude:     "123456789",
+					Longitude:    "123456789",
+					Attending:    "0",
+					ConfirmPanic: "1",
+					Scare:        "P",
+					GPRS:         "",
+				},
+				model: otraffic.Model{
+					ID:        "12345",
+					Request:   "qwertyui128765431425",
+					IMEI:      "",
+					Ip:        "192.168.100.1",
+					IsAlarm:   true,
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				},
+			},
+			err: false,
+			asserts: func(t *testing.T, err error, ap assertsParams) bool {
+				return assert.NoError(t, err) &&
+					ap.routerClient.AssertExpectations(t) &&
+					ap.routerClient.AssertCalled(t, "ValidateIMEI", mock.Anything, mock.Anything) &&
+					ap.trafficRepo.AssertExpectations(t) &&
+					ap.trafficRepo.AssertCalled(t, "FindByIMEI", mock.Anything, mock.Anything, mock.Anything) &&
+					ap.trafficRepo.AssertExpectations(t) &&
+					ap.trafficRepo.AssertCalled(t, "Create", mock.Anything, mock.Anything) &&
+					ap.streamClient.AssertExpectations(t) &&
+					ap.streamClient.AssertCalled(t, "Publish", mock.Anything, mock.Anything, mock.Anything)
+			},
+		},
+		{
+			name: "Happy Path with UnitID with out Alarm",
+			fields: fields{
+				routerClientFunc: func() *routermock.IClient {
+					routerMock := &routermock.IClient{}
+					routerMock.On("ValidateIMEI", mock.Anything, mock.Anything).
+						Return(&router.Response{Success: true}, nil)
+					return routerMock
+				},
+			},
+			repositoryOpts: repositoryOpts{
+				oldRouterRepoFunc: func() *routeroldmocks.IRepository {
+					repositoryMock := &routeroldmocks.IRepository{}
+					repositoryMock.On("UpdateLatAndLong",
+						mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+						Return(nil)
+					repositoryMock.On("FindByIMEI", mock.Anything, mock.Anything).
+						Return(&routerold.RouterModel{}, nil)
+					return repositoryMock
+				},
+				oldUnitsRepoFunc: func() *unitsoldmocks.IRepository {
+					repositoryMock := &unitsoldmocks.IRepository{}
+					repositoryMock.On("FindByRouterID", mock.Anything, 0).
+						Return(&unitsold.UnitsModel{ID: 53438, IsVehicle: true, RouterID: 1}, nil)
+					return repositoryMock
+				},
+				oldAlarmRepoFunc: func() *alarmoldmocks.IRepository {
+					repositoryMock := &alarmoldmocks.IRepository{}
+					repositoryMock.On("FindByRouterID", mock.Anything, mock.Anything).
+						Return(true, "1", nil)
+					return repositoryMock
+				},
+				oldLocationsRepoFunc: func() *locationsoldmocks.IRepository {
+					repositoryMock := &locationsoldmocks.IRepository{}
+					repositoryMock.On("Create", mock.Anything, mock.Anything).
+						Return(1, nil)
+					return repositoryMock
+				},
+				facilityLocationsRepoFunc: func() *facilitylocationsoldmocks.IRepository {
+					repositoryMock := &facilitylocationsoldmocks.IRepository{}
+					repositoryMock.On("Create", mock.Anything, mock.Anything).
+						Return(nil)
+					return repositoryMock
+				},
+				trafficRepoFunc: func() *trafficmocks.IRepository {
+					repositoryMock := &trafficmocks.IRepository{}
+					repositoryMock.On("FindByIMEI", mock.Anything, mock.Anything, mock.Anything).
+						Return(true, nil)
+					repositoryMock.On("UpdateByIMEI", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+						Return(nil)
+					return repositoryMock
+				},
+			},
+			args: args{
+				collect: &collector.Payload{
+					Request:      "0000002c0,12,12,,53438,12,123456789,123456789,00,00,00,1",
+					IP:           "192.168.100.1",
+					IMEI:         "",
+					UnitID:       "53438",
+					Latitude:     "123456789",
+					Longitude:    "123456789",
+					Attending:    "0",
+					ConfirmPanic: "1",
+					Scare:        "0",
+					GPRS:         "",
+				},
+				model: otraffic.Model{
+					ID:        "12345",
+					Request:   "qwertyui128765431425",
+					IMEI:      "",
+					Ip:        "192.168.100.1",
+					IsAlarm:   true,
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				},
+			},
+			err: false,
+			asserts: func(t *testing.T, err error, ap assertsParams) bool {
+				return assert.NoError(t, err) &&
+					ap.oldRouterRepo.AssertExpectations(t) &&
+					ap.oldRouterRepo.AssertCalled(t, "UpdateLatAndLong", ap.ctx,
+						mock.Anything, mock.Anything, mock.Anything, mock.Anything) &&
+					ap.oldUnitsRepo.AssertExpectations(t) &&
+					ap.oldUnitsRepo.AssertCalled(t, "FindByRouterID", ap.ctx, 0) &&
+					ap.oldLocationsRepo.AssertCalled(t, "Create", ap.ctx,
+						mock.Anything) &&
+					ap.facilityLocationsRepo.AssertExpectations(t) &&
+					ap.facilityLocationsRepo.AssertCalled(t, "Create", ap.ctx,
+						mock.Anything)
+			},
+		},
+		{
 			name: "Error on create alarm",
 			fields: fields{
 				routerClientFunc: func() *routermock.IClient {

@@ -39,8 +39,13 @@ func (p *Payload) ParsePayload(r *http.Request) error {
 	}
 
 	p.GPRS = collectString[0]
+
 	if collectString[3] != "" {
 		p.IMEI = collectString[3]
+	} else if collectString[4] != "" {
+		p.UnitID = collectString[4]
+	} else {
+		return terrors.New(terrors.ErrBadRequest, "Invalid Request String", nil)
 	}
 
 	// Validate Latitude param
