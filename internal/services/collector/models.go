@@ -11,6 +11,7 @@ type Payload struct {
 	ConfirmPanic string `json:"confirmPanic"`
 	IP           string `json:"ip"`
 	Request      string `json:"request"`
+	UnitID       string `json:"unitID"`
 }
 
 type AlarmPayload struct {
