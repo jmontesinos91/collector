@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"net/http"
 	"time"
 
@@ -10,15 +11,17 @@ import (
 	scollector "github.com/jmontesinos91/collector/internal/services/collector"
 	"github.com/jmontesinos91/ologs/logger"
 	"github.com/jmontesinos91/osecurity/sts"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
 // CollectorController controller struct
 type CollectorController struct {
-	log         *logger.ContextLogger
-	validate    *validator.Validate
-	collectorSv collector.IService
-	stsClient   sts.ISTSClient
+	log           *logger.ContextLogger
+	validate      *validator.Validate
+	collectorSv   collector.IService
+	stsClient     sts.ISTSClient
+	counterMetric prometheus.Counter
 }
 
 // NewCollectorController Constructor
@@ -28,6 +31,13 @@ func NewCollectorController(server *HTTPServer, validator *validator.Validate, s
 		validate:    validator,
 		collectorSv: ss,
 		stsClient:   sts,
+		counterMetric: promauto.NewCounter(prometheus.CounterOpts{
+			Name:        "collector_reqs_total",
+			Namespace:   "collector",
+			Subsystem:   "api",
+			ConstLabels: map[string]string{},
+			Help:        "The total number of requests to routers endpoints",
+		}),
 	}
 
 	// Endpoints without secure
@@ -62,6 +72,9 @@ func (sc *CollectorController) handleReceive(w http.ResponseWriter, r *http.Requ
 
 func (sc *CollectorController) handleCollector(w http.ResponseWriter, r *http.Request) {
 	sc.log.Log(logrus.InfoLevel, "handleCollector", "Incoming request to handleCollector")
+
+	// Increment metric
+	sc.counterMetric.Inc()
 
 	// Create a context with a deadline of 2 seconds.
 	ctx, cancel := context.WithTimeout(r.Context(), 90*time.Second)
